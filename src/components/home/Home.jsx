@@ -1,22 +1,35 @@
-import React, { useState, useEffect } from "react";
-import EmployeeContainer from "../employeeContainer/EmployeeContainer";
-import EmployeeCard from "../employeeCard/EmployeeCard";
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import EmployeeContainer from '../employeeContainer/EmployeeContainer';
+import EmployeeCard from '../employeeCard/EmployeeCard';
 
-import "./home.scss";
+import './home.scss';
 
 const Home = ({ employees }) => {
-  const [managerSubs, setManagerSubs] = useState(null);
-  const [managerIndex, setManagerIndex] = useState(null);
+  const [employeesArr, setEmployeesArr] = useState([]);
+  const [filteredSubs, setFilterSubs] = useState([]);
 
-  const managerClicked = (employees, index) => {
-    setManagerSubs(employees);
-    setManagerIndex(index);
+  const flattenEmployees = (elements) => {
+    elements.subordinates?.map((employee) => {
+      setEmployeesArr((oldArr) => [...oldArr, employee]);
+      return flattenEmployees(employee);
+    });
   };
 
-  console.log(employees);
+  const employeeFilter = (Callback) => (personChoosed) => {
+    const filteredArr = employeesArr.filter((el) => {
+      return personChoosed.toLowerCase() === el.manager.toLowerCase();
+    });
+    console.log(filteredArr);
+    setFilterSubs(filteredArr);
+  };
+
+  useEffect(() => {}, []);
+
+  const flatJson = useMemo(() => flattenEmployees(employees), [employees]);
+
   return (
-    <div className="home">
-      <ul className="home__node-main">
+    <div className='home'>
+      <ul className='home__node-main'>
         <li>
           <EmployeeCard
             name={employees.employee_name}
@@ -26,38 +39,50 @@ const Home = ({ employees }) => {
           />
         </li>
         <hr
-          className="home__horLine"
+          className='home__horLine'
           style={{ width: `${employees.subordinates.length * 35 - 35}rem` }}
         />
-        <ul className="home__node-child">
-          <div className="layer">
+        <ul className='home__node-child'>
+          <div className='layer'>
             {employees.subordinates.map((employee, index) => {
               return (
                 <li
-                  className="home__node-item"
+                  className='home__node-item'
                   key={employee.employee_name}
-                  onClick={() => managerClicked(employee.subordinates, index)}
+                  onClick={() => employeeFilter(employee.employee_name)}
                 >
-                  <EmployeeCard
-                    name={employee.employee_name}
-                    locationText={employee.region}
-                    role={employee.business_title}
-                    profileImage={employee.profile_pic}
-                    department={employee.department}
-                  />
-                  {!managerSubs && (
+                  <div
+                  // onClick={() =>
+                  //   managerClicked(employee?.subordinates, index)
+                  // }
+                  >
+                    <EmployeeCard
+                      name={employee.employee_name}
+                      locationText={employee.region}
+                      role={employee.business_title}
+                      profileImage={employee.profile_pic}
+                      department={employee.department}
+                    />
+                  </div>
+
+                  {!filteredSubs.length > 0 && (
                     <EmployeeContainer
                       employeeCards={employee.subordinates}
-                      style="vertical"
+                      style='vertical'
                     />
                   )}
                 </li>
               );
             })}
+            <div>
+              {filteredSubs.length > 0 && (
+                <EmployeeContainer
+                  employeeCards={filteredSubs[0]}
+                  style='horizontal'
+                />
+              )}
+            </div>
           </div>
-          {managerSubs && (
-            <EmployeeContainer employeeCards={managerSubs} style="horizontal" />
-          )}
         </ul>
       </ul>
     </div>
